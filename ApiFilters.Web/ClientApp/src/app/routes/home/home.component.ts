@@ -1,41 +1,39 @@
-import { Component } from '@angular/core';
-import { SnackerService } from '../../services/snacker.service';
-
+import { Component, ViewChild, ElementRef, OnInit } from '@angular/core';
+import { fromEvent } from 'rxjs';
+import { debounceTime, distinctUntilChanged,  } from 'rxjs/operators';
+import { AppService } from '../../services/app.service';
+import { Product } from '../../models/product';
 
 @Component({
   selector: 'app-home',
   templateUrl: './home.component.html',
-  styleUrls: ['home.component.css']
+  styleUrls: ['./home.component.css'],
+  providers: [ AppService ]
 })
-export class HomeComponent {
-  palette: string[] = [
-    'snacker-red',
-    'snacker-pink',
-    'snacker-purple',
-    'snacker-deep-purple',
-    'snacker-indigo',
-    'snacker-blue',
-    'snacker-light-blue',
-    'snacker-cyan',
-    'snacker-teal',
-    'snacker-green',
-    'snacker-light-green',
-    'snacker-lime',
-    'snacker-yellow',
-    'snacker-amber',
-    'snacker-orange',
-    'snacker-deep-orange',
-    'snacker-brown',
-    'snacker-grey',
-    'snacker-blue-grey'
-  ];
+export class HomeComponent implements OnInit {
+  @ViewChild('filter') filter: ElementRef;
 
   constructor(
-    private snacker: SnackerService
+    public service: AppService
   ) { }
 
-  testSnacker(color: string) {
-    this.snacker.setDuration(500000);
-    this.snacker.sendColorMessage('Creeping your stuff', [color]);
+  ngOnInit() {
+    fromEvent(this.filter.nativeElement, 'keyup')
+      .pipe(
+        debounceTime(250),
+        distinctUntilChanged()
+      )
+      .subscribe((data: any) => {
+        if (!data.target.value) {
+          this.service.clearProducts();
+          return;
+        }
+
+        this.service.filterProducts(data.target.value);
+      });
+  }
+
+  displayProduct(p: Product) {
+    return p ? p.name : null;
   }
 }
